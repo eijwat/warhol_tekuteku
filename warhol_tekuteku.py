@@ -185,7 +185,7 @@ def colorize_tekuteku(panel_size, line_mask, char_size, palette):
     return panel
 
 
-def create_poster(input_path="tekuteku.png", output_dir="."):
+def create_poster(input_path="tekuteku.png", output_dir=".", clean=False):
     tekuteku_path = input_path
     panel_size = 600
     
@@ -195,74 +195,88 @@ def create_poster(input_path="tekuteku.png", output_dir="."):
     all_panels = WARHOL_PALETTES + HOKUSAI_PALETTES  # 6+6 = 12
     
     gap = 6
-    title_h = 130
-    label_h = 55
-    poster_w = cols * panel_size + (cols + 1) * gap
-    poster_h = title_h + rows * (panel_size + label_h) + (rows + 1) * gap + 20
-    
-    poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
-    draw = ImageDraw.Draw(poster)
-    
-    # フォント（日本語対応）
-    jp_font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
-    jp_font_reg = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    en_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    try:
-        title_font = ImageFont.truetype(en_bold, 64)
-        label_font = ImageFont.truetype(jp_font_reg, 20)
-    except:
-        title_font = ImageFont.load_default()
-        label_font = ImageFont.load_default()
-    
-    # タイトル
-    title = "TEKUTEKU  POP  ART"
-    bbox = draw.textbbox((0, 0), title, font=title_font)
-    tw = bbox[2] - bbox[0]
-    draw.text(((poster_w - tw) // 2, 20), title, fill=(255, 255, 255), font=title_font)
-    
-    sub = "Warhol × Hokusai Color Palettes"
-    bbox2 = draw.textbbox((0, 0), sub, font=label_font)
-    sw = bbox2[2] - bbox2[0]
-    draw.text(((poster_w - sw) // 2, 90), sub, fill=(160, 160, 160), font=label_font)
-    
-    # パネル配置
-    for idx, (name, palette) in enumerate(all_panels):
-        row = idx // cols
-        col = idx % cols
+
+    if clean:
+        # パネルのみ：タイトル・ラベル・クレジットなし
+        poster_w = cols * panel_size + (cols - 1) * gap
+        poster_h = rows * panel_size + (rows - 1) * gap
+        poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
+
+        for idx, (name, palette) in enumerate(all_panels):
+            row = idx // cols
+            col = idx % cols
+            x = col * (panel_size + gap)
+            y = row * (panel_size + gap)
+            panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
+            poster.paste(panel, (x, y))
+    else:
+        title_h = 130
+        label_h = 55
+        poster_w = cols * panel_size + (cols + 1) * gap
+        poster_h = title_h + rows * (panel_size + label_h) + (rows + 1) * gap + 20
         
-        x = gap + col * (panel_size + gap)
-        y = title_h + gap + row * (panel_size + label_h + gap)
+        poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
+        draw = ImageDraw.Draw(poster)
         
-        panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
-        poster.paste(panel, (x, y))
+        # フォント（日本語対応）
+        jp_font_path = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
+        jp_font_reg = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+        en_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        try:
+            title_font = ImageFont.truetype(en_bold, 64)
+            label_font = ImageFont.truetype(jp_font_reg, 20)
+        except:
+            title_font = ImageFont.load_default()
+            label_font = ImageFont.load_default()
         
-        # ラベル
-        # シリーズ判定
-        is_hokusai = idx >= 6
-        label_color = (100, 180, 255) if is_hokusai else (255, 100, 150)
+        # タイトル
+        title = "TEKUTEKU  POP  ART"
+        bbox = draw.textbbox((0, 0), title, font=title_font)
+        tw = bbox[2] - bbox[0]
+        draw.text(((poster_w - tw) // 2, 20), title, fill=(255, 255, 255), font=title_font)
         
-        bbox_l = draw.textbbox((0, 0), name, font=label_font)
-        lw = bbox_l[2] - bbox_l[0]
-        lx = x + (panel_size - lw) // 2
-        ly = y + panel_size + 8
-        draw.text((lx, ly), name, fill=label_color, font=label_font)
+        sub = "Warhol × Hokusai Color Palettes"
+        bbox2 = draw.textbbox((0, 0), sub, font=label_font)
+        sw = bbox2[2] - bbox2[0]
+        draw.text(((poster_w - sw) // 2, 90), sub, fill=(160, 160, 160), font=label_font)
         
-        # カラースウォッチ
-        swatch_y = ly + 26
-        swatch_sz = 14
-        sg = 6
-        colors = [palette["bg"], palette["line"], palette["fill"]]
-        total = len(colors) * (swatch_sz + sg) - sg
-        sx = x + (panel_size - total) // 2
-        for c in colors:
-            draw.rectangle([sx, swatch_y, sx + swatch_sz, swatch_y + swatch_sz], fill=c, outline=(80, 80, 80))
-            sx += swatch_sz + sg
-    
-    # クレジット
-    credit = "Art: Eiji | Palettes: Warhol + Hokusai"
-    bbox_c = draw.textbbox((0, 0), credit, font=label_font)
-    cw = bbox_c[2] - bbox_c[0]
-    draw.text(((poster_w - cw) // 2, poster_h - 30), credit, fill=(100, 100, 100), font=label_font)
+        # パネル配置
+        for idx, (name, palette) in enumerate(all_panels):
+            row = idx // cols
+            col = idx % cols
+            
+            x = gap + col * (panel_size + gap)
+            y = title_h + gap + row * (panel_size + label_h + gap)
+            
+            panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
+            poster.paste(panel, (x, y))
+            
+            # ラベル
+            is_hokusai = idx >= 6
+            label_color = (100, 180, 255) if is_hokusai else (255, 100, 150)
+            
+            bbox_l = draw.textbbox((0, 0), name, font=label_font)
+            lw = bbox_l[2] - bbox_l[0]
+            lx = x + (panel_size - lw) // 2
+            ly = y + panel_size + 8
+            draw.text((lx, ly), name, fill=label_color, font=label_font)
+            
+            # カラースウォッチ
+            swatch_y = ly + 26
+            swatch_sz = 14
+            sg = 6
+            colors = [palette["bg"], palette["line"], palette["fill"]]
+            total = len(colors) * (swatch_sz + sg) - sg
+            sx = x + (panel_size - total) // 2
+            for c in colors:
+                draw.rectangle([sx, swatch_y, sx + swatch_sz, swatch_y + swatch_sz], fill=c, outline=(80, 80, 80))
+                sx += swatch_sz + sg
+        
+        # クレジット
+        credit = "Art: Eiji | Palettes: Warhol + Hokusai"
+        bbox_c = draw.textbbox((0, 0), credit, font=label_font)
+        cw = bbox_c[2] - bbox_c[0]
+        draw.text(((poster_w - cw) // 2, poster_h - 30), credit, fill=(100, 100, 100), font=label_font)
     
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = os.path.join(output_dir, f"tekuteku_warhol_poster_{ts}.png")
@@ -271,12 +285,13 @@ def create_poster(input_path="tekuteku.png", output_dir="."):
     return output_path
 
 
-def create_2x2_popart(style="mix", input_path="tekuteku.png", output_dir="."):
+def create_2x2_popart(style="mix", input_path="tekuteku.png", output_dir=".", clean=False):
     """
     2×2ポップアート生成
     style: "warhol" = 洋風ランダム4枚
            "hokusai" = 和風ランダム4枚
            "mix" = 洋風2枚 + 和風2枚
+    clean: True = パネルのみ（タイトル・ラベル・スウォッチなし）
     """
     import random
 
@@ -306,58 +321,72 @@ def create_2x2_popart(style="mix", input_path="tekuteku.png", output_dir="."):
         title = "TEKUTEKU POP ART"
 
     gap = 6
-    label_h = 50
-    title_h = 100
-    poster_w = 2 * panel_size + 3 * gap
-    poster_h = title_h + 2 * (panel_size + label_h) + 3 * gap
 
-    poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
-    draw = ImageDraw.Draw(poster)
+    if clean:
+        # パネルのみ
+        poster_w = 2 * panel_size + gap
+        poster_h = 2 * panel_size + gap
+        poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
 
-    # フォント
-    jp_bold = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
-    jp_reg = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-    en_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    try:
-        title_font = ImageFont.truetype(jp_bold, 52)
-        label_font = ImageFont.truetype(jp_reg, 22)
-    except:
-        title_font = ImageFont.load_default()
-        label_font = ImageFont.load_default()
+        for idx, ((name, palette), series) in enumerate(zip(chosen, series_labels)):
+            row, col = divmod(idx, 2)
+            x = col * (panel_size + gap)
+            y = row * (panel_size + gap)
+            panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
+            poster.paste(panel, (x, y))
+    else:
+        label_h = 50
+        title_h = 100
+        poster_w = 2 * panel_size + 3 * gap
+        poster_h = title_h + 2 * (panel_size + label_h) + 3 * gap
 
-    # タイトル
-    bbox = draw.textbbox((0, 0), title, font=title_font)
-    tw = bbox[2] - bbox[0]
-    draw.text(((poster_w - tw) // 2, 20), title, fill=(255, 255, 255), font=title_font)
+        poster = Image.new("RGB", (poster_w, poster_h), (20, 20, 20))
+        draw = ImageDraw.Draw(poster)
 
-    # パネル配置
-    for idx, ((name, palette), series) in enumerate(zip(chosen, series_labels)):
-        row, col = divmod(idx, 2)
-        x = gap + col * (panel_size + gap)
-        y = title_h + gap + row * (panel_size + label_h + gap)
+        # フォント
+        jp_bold = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
+        jp_reg = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+        en_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        try:
+            title_font = ImageFont.truetype(jp_bold, 52)
+            label_font = ImageFont.truetype(jp_reg, 22)
+        except:
+            title_font = ImageFont.load_default()
+            label_font = ImageFont.load_default()
 
-        panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
-        poster.paste(panel, (x, y))
+        # タイトル
+        bbox = draw.textbbox((0, 0), title, font=title_font)
+        tw = bbox[2] - bbox[0]
+        draw.text(((poster_w - tw) // 2, 20), title, fill=(255, 255, 255), font=title_font)
 
-        # ラベル
-        label_color = (255, 100, 150) if series == "Warhol" else (100, 180, 255)
-        bbox_l = draw.textbbox((0, 0), name, font=label_font)
-        lw = bbox_l[2] - bbox_l[0]
-        lx = x + (panel_size - lw) // 2
-        ly = y + panel_size + 8
-        draw.text((lx, ly), name, fill=label_color, font=label_font)
+        # パネル配置
+        for idx, ((name, palette), series) in enumerate(zip(chosen, series_labels)):
+            row, col = divmod(idx, 2)
+            x = gap + col * (panel_size + gap)
+            y = title_h + gap + row * (panel_size + label_h + gap)
 
-        # スウォッチ
-        swatch_y = ly + 28
-        swatch_sz = 14
-        sg = 6
-        colors = [palette["bg"], palette["line"], palette["fill"]]
-        total = len(colors) * (swatch_sz + sg) - sg
-        sx = x + (panel_size - total) // 2
-        for c in colors:
-            draw.rectangle([sx, swatch_y, sx + swatch_sz, swatch_y + swatch_sz],
-                           fill=c, outline=(80, 80, 80))
-            sx += swatch_sz + sg
+            panel = colorize_tekuteku(panel_size, line_mask, char_size, palette)
+            poster.paste(panel, (x, y))
+
+            # ラベル
+            label_color = (255, 100, 150) if series == "Warhol" else (100, 180, 255)
+            bbox_l = draw.textbbox((0, 0), name, font=label_font)
+            lw = bbox_l[2] - bbox_l[0]
+            lx = x + (panel_size - lw) // 2
+            ly = y + panel_size + 8
+            draw.text((lx, ly), name, fill=label_color, font=label_font)
+
+            # スウォッチ
+            swatch_y = ly + 28
+            swatch_sz = 14
+            sg = 6
+            colors = [palette["bg"], palette["line"], palette["fill"]]
+            total = len(colors) * (swatch_sz + sg) - sg
+            sx = x + (panel_size - total) // 2
+            for c in colors:
+                draw.rectangle([sx, swatch_y, sx + swatch_sz, swatch_y + swatch_sz],
+                               fill=c, outline=(80, 80, 80))
+                sx += swatch_sz + sg
 
     suffix = style
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -379,9 +408,11 @@ if __name__ == "__main__":
                         help="入力画像パス (デフォルト: tekuteku.png)")
     parser.add_argument("--output", "-o", default=".",
                         help="出力ディレクトリ (デフォルト: カレント)")
+    parser.add_argument("--clean", "-c", action="store_true",
+                        help="パネルのみ出力（タイトル・ラベル・スウォッチなし）")
     args = parser.parse_args()
 
     if args.mode == "full":
-        create_poster(args.input, args.output)
+        create_poster(args.input, args.output, args.clean)
     else:
-        create_2x2_popart(args.mode, args.input, args.output)
+        create_2x2_popart(args.mode, args.input, args.output, args.clean)
