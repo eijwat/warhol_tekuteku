@@ -33,6 +33,18 @@ python warhol_tekuteku.py --mode warhol -i my_character.png -o output/
 | `--mode` | `full` / `warhol` / `hokusai` / `mix` | `full` |
 | `-i`, `--input` | 入力画像パス | `tekuteku.png` |
 | `-o`, `--output` | 出力ディレクトリ | `.`（カレント） |
+| `-c`, `--clean` | パネルのみ出力（タイトル・ラベル・スウォッチなし） | off |
+
+### 使用例
+
+```bash
+# cleanモード：パネルだけのシンプルな出力
+python warhol_tekuteku.py --mode warhol --clean
+python warhol_tekuteku.py --mode hokusai -c
+
+# 通常モード：タイトル・ラベル・カラースウォッチ付き
+python warhol_tekuteku.py --mode warhol
+```
 
 2×2モードは実行するたびにランダムで組み合わせが変わります。
 
